@@ -1,4 +1,5 @@
 const { Client, Collection, Intents, Options } = require('discord.js-selfbot-v13');
+const path = require('path');
 const mongoose = require('mongoose');
 const { bgBlue, black, green } = require("chalk");
 const fs = require('fs');
@@ -8,10 +9,10 @@ class ACAR extends Client {
 
     constructor(options) {
         super({
-            options,
-            intents: [32767, "GUILD_MEMBERS", new Intents(32767), Intents.FLAGS.GUILD_MEMBERS],
+            intents: [32767],
             fetchAllMembers: true,
             shard: "auto",
+            checkUpdate: false,
         }) 
         this.token = options.token
         this.MongoURI = options.MongoURI
@@ -59,7 +60,7 @@ class ACAR extends Client {
         dirs.forEach(dir => {
             let files = fs.readdirSync(`./_events/${dir}`, { encoding: "utf8" }).filter(file => file.endsWith(".js"));
             files.forEach(file => {
-                let referans = require(`../Bots/self_tracking/_events/${dir}/${file}`);
+                let referans = require(path.join(__dirname, '..', 'Bots', 'self_tracking', '_events', dir, file));
                 this.on(referans.name, referans.onLoad);
             });
         });
@@ -73,7 +74,7 @@ class ACAR extends Client {
             let files = fs.readdirSync(`./_commands/${dir}`, { encoding: "utf8" }).filter(file => file.endsWith(".js"));
             console.log(`${black.bgHex('#D9A384')("SELF-TRACKING")} ${files.length} commands loaded in ${dir} category.`);
             files.forEach(file => {
-                let referans = require(`../Bots/self_tracking/_commands/${dir}/${file}`);
+                let referans = require(path.join(__dirname, '..', 'Bots', 'self_tracking', '_commands', dir, file));
                 if(referans.onLoad != undefined && typeof referans.onLoad == "function") referans.onLoad(this);
                 this.commands.set(referans.name, referans);
                 if (referans.aliases) referans.aliases.forEach(alias => this.aliases.set(alias, referans));
@@ -84,8 +85,6 @@ class ACAR extends Client {
     async connect(token = this.token) {
         if(this.MongoURI) {
             await mongoose.connect(this.MongoURI, {
-                useNewUrlParser: true,
-                useUnifiedTopology: true
             }).then(async (a) => {
                 console.log(`[MONGODB] Bağlantı Sağlandı: ${this.MongoURI}`);
                 await this.login(token)
